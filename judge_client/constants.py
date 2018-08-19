@@ -1,0 +1,6 @@
+# -*- coding: utf-8 -*-
+# Common constants for submit
+
+SUBMIT_RESPONSE_ERROR = 'CERR'
+SUBMIT_RESPONSE_OK = 'OK'
+SUBMIT_RESPONSE_PROTOCOL_CORRUPTED = 'PROTCOR'
