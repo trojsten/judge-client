@@ -1,4 +1,5 @@
 # coding=utf-8
+import six
 import socket
 from collections import namedtuple
 from decimal import Decimal
@@ -77,9 +78,8 @@ class JudgeClient(object):
                                       result=test_result,
                                       time=test[3].text,
                                       details=details))
-            if test_result != constants.SUBMIT_RESPONSE_OK:
+            if test_result != constants.SUBMIT_RESPONSE_OK and result == constants.SUBMIT_RESPONSE_OK:
                 result = test_result
-                break
         try:
             score = Decimal(tree.find("runLog/score").text)
         except (ValueError, TypeError):
@@ -98,13 +98,22 @@ class JudgeClient(object):
             priority,
         )
 
+    def _encode(self, s):
+        if isinstance(s, bytes):
+            return s
+        if not isinstance(s, six.string_types):
+            if six.PY3:
+                return six.text_type(s).encode('utf-8')
+            return bytes(s)
+        return s.encode('utf-8')
+
     def _send_data_to_server(self, header, submission_file_content):
         """Sends submission to the judge system."""
         try:
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
                 sock.connect((self.tester_url, self.tester_port))
-                sock.sendall(header.encode('utf-8'))
-                sock.sendall(submission_file_content.encode('utf-8'))
+                sock.sendall(self._encode(header))
+                sock.sendall(self._encode(submission_file_content))
         except socket.error:
             raise JudgeConnectionError(
                 'Failed to connect to judge system (%s:%s)' % (self.tester_url, self.tester_port))
@@ -116,8 +125,8 @@ class DebugJudgeClient(JudgeClient):
 
     def _send_data_to_server(self, header, submission_file_content):
         print('Submit RAW:')
-        print(header)
-        print(submission_file_content)
+        print(self._encode(header))
+        print(self._encode(submission_file_content))
 
 
 class JudgeConnectionError(IOError):
