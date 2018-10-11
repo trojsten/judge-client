@@ -1,16 +1,16 @@
-# coding=utf-8
+
 from __future__ import unicode_literals
 
+import time
 import socket
 import threading
-import time
+
 from contextlib import closing
 from unittest import TestCase
-
 from judge_client.client import JudgeClient
 
 
-def get_free_port():
+def get_free_port_number():
     s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
     s.bind(('localhost', 0))
     _, port = s.getsockname()
@@ -23,7 +23,7 @@ class JudgeClientTests(TestCase):
     TESTER_ID = 'TEST'
     
     def setUp(self):
-        self.port = get_free_port()
+        self.port = get_free_port_number()
 
         def run_fake_server(test):
             with closing(socket.socket()) as server_sock:
