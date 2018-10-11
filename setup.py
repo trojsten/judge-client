@@ -13,7 +13,7 @@ setuptools.setup(
 
     packages=setuptools.find_packages(),
     test_suite='tests',
-    install_requires=[],
+    install_requires=['six'],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
