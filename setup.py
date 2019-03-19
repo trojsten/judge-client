@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="trojsten_judge_client",
-    version="1.0.1",
+    version="1.0.2",
     url="https://github.com/trojsten/judge-client",
 
     author="Michal Hozza",
