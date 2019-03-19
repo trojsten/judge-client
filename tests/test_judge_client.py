@@ -1,4 +1,4 @@
-
+# coding=utf-8
 from __future__ import unicode_literals
 
 import time
@@ -7,7 +7,7 @@ import threading
 
 from contextlib import closing
 from unittest import TestCase
-from judge_client.client import JudgeClient
+from judge_client.client import JudgeClient, ProtocolCorruptedError, ProtocolFormatError
 
 
 def get_free_port_number():
@@ -100,3 +100,36 @@ class ProtocolParsingTests(TestCase):
         self.assertEqual(parsed_protocol.result, 'WA')
         self.assertEqual(parsed_protocol.points, 25)
         self.assertEqual(len(parsed_protocol.tests), 10)
+
+    def test_parse_corrupted_protocol_rises(self):
+        self.judge_client = JudgeClient(
+            'test', 'test', 0)
+
+        protocol = '''<protokol><runLog>
+        <test><name>0.sample.a.in</name><resultCode>1</resultCode><resultMsg>OK</resultMsg><time>28</time></test>
+        <test><nam
+        '''
+        with self.assertRaises(ProtocolCorruptedError):
+            self.judge_client.parse_protocol(protocol, 100)
+
+    def test_parse_missing_score_rises(self):
+        self.judge_client = JudgeClient(
+            'test', 'test', 0)
+
+        protocol = '''<protokol><runLog>
+        <test><name>0.sample.a.in</name><resultCode>1</resultCode><resultMsg>OK</resultMsg><time>28</time></test>
+        <test><name>0.sample.b.in</name><resultCode>1</resultCode><resultMsg>OK</resultMsg><time>28</time></test>
+        <test><name>1.a.in</name><resultCode>1</resultCode><resultMsg>OK</resultMsg><time>0</time></test>
+        <test><name>1.b.in</name><resultCode>1</resultCode><resultMsg>OK</resultMsg><time>0</time></test>
+        <test><name>2.a.in</name><resultCode>2</resultCode><resultMsg>WA</resultMsg><time>0</time></test>
+        <test><name>2.b.in</name><resultCode>2</resultCode><resultMsg>WA</resultMsg><time>0</time></test>
+        <test><name>3.a.in</name><resultCode>3</resultCode><resultMsg>TLE</resultMsg><time>0</time></test>
+        <test><name>3.b.in</name><resultCode>3</resultCode><resultMsg>TLE</resultMsg><time>0</time></test>
+        <test><name>3.a.in</name><resultCode>7</resultCode><resultMsg>IGN</resultMsg><time>0</time></test>
+        <test><name>3.b.in</name><resultCode>7</resultCode><resultMsg>IGN</resultMsg><time>0</time></test>
+        <details>
+        Score: 25
+        </details><finalResult>2</finalResult><finalMessage>Wrong Answer (OK: 25 %)</finalMessage></runLog></protokol>
+        '''
+        with self.assertRaises(ProtocolFormatError):
+            self.judge_client.parse_protocol(protocol, 100)

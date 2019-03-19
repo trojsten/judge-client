@@ -54,7 +54,7 @@ class JudgeClient(object):
         """
         try:
             tree = ElementTree.fromstring(protocol_content)
-        except SyntaxError:
+        except (SyntaxError, ElementTree.ParseError):
             raise ProtocolCorruptedError(
                 'Error while parsing protocol.', protocol_content)
 
@@ -82,7 +82,7 @@ class JudgeClient(object):
                 result = test_result
         try:
             score = Decimal(tree.find("runLog/score").text)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             raise ProtocolFormatError("Invalid score.", protocol_content)
         points = (max_points * score) / Decimal(100)
         return Protocol(result=result, points=points, compile_log=None, tests=tests)
