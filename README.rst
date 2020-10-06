@@ -14,7 +14,7 @@ Usage
 
     from judge_client.client import JudgeClient
 
-    judge_cient = JudgeClient(tester_id, tester_url, tester_port)
+    judge_client = JudgeClient(tester_id, tester_url, tester_port)
     judge_client.submit(submit_id, user_id, task_id, submission_content, language)
 
 Installation
