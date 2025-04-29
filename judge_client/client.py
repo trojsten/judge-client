@@ -1,6 +1,7 @@
 import datetime
 from collections.abc import Iterable
 from dataclasses import asdict
+from typing import IO
 
 import requests
 
@@ -77,7 +78,7 @@ class JudgeClient:
         task: str,
         external_user_id: str,
         filename: str,
-        program: str,
+        program: str | bytes | bytearray | IO,
         language: str = "",
         ip: str | None = None,
         namespace: str | None = None,
@@ -100,14 +101,13 @@ class JudgeClient:
 
         response = self._post(
             "/api/submits/",
-            json={
-                "task": task,
-                "external_user_id": external_user_id,
-                "filename": filename,
-                "program": program,
-                "language": language,
-                "ip": ip,
-                "namespace": namespace,
+            files={
+                "task": (None, task),
+                "external_user_id": (None, external_user_id),
+                "program": (filename, program),
+                "language": (None, language),
+                "ip": (None, ip),
+                "namespace": (None, namespace),
             },
         )
 
