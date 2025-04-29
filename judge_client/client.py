@@ -377,7 +377,7 @@ class JudgeClient:
 
         return response.content
 
-    def upload_task_data(self, namespace: str, task: str, data: bytes):
+    def upload_task_data(self, namespace: str, task: str, data: IO):
         """
         Uploads task data.
 
@@ -389,7 +389,7 @@ class JudgeClient:
         """
         self._post(
             f"/api/tasks/{namespace}/{task}/data/",
-            files={"file": ("data.zip", data)},
+            files={"file": (data.name, data)},
         )
 
     #
