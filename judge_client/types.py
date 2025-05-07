@@ -345,10 +345,6 @@ class Submit:
     """
     Language as string returned from testing (eg Python 3.13.2)
     """
-    program: str
-    """
-    Program
-    """
     protocol: Protocol
     """
     Protocol (may be empty)
