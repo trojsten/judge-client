@@ -142,6 +142,20 @@ class JudgeClient:
                 response.text,
             ) from e
 
+    def download_submit_program(self, public_id: str) -> bytes:
+        """
+        Downloads program from the given submit
+
+        :param public_id:
+
+        :raises JudgeConnectionError: If the connection to the judge system fails.
+
+        :returns: Program as bytes
+        """
+        response = self._get(f"/api/submits/{public_id}/program/")
+
+        return response.content
+
     def get_submits(
         self,
         namespace: str | None = None,
