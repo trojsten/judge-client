@@ -1,10 +1,12 @@
 import datetime
 from collections.abc import Iterable
 from dataclasses import asdict
+from sys import version as python_version
 from typing import IO
 
 import requests
 
+from judge_client import __version__ as judge_client_version
 from judge_client.util import JudgeClientIterator
 
 from .types import Language, Namespace, Priority, Submit, Task, TaskLanguage, TaskShort
@@ -25,6 +27,7 @@ class JudgeClient:
         self.session = requests.Session()
         self.session.headers.update(
             {
+                "User-Agent": f"trojsten-judge-client/{judge_client_version} (Python {python_version})",
                 "X-API-Token": self.judge_token,
             }
         )
