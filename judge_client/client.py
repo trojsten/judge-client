@@ -406,7 +406,7 @@ class JudgeClient:
         """
         self._post(
             f"/api/tasks/{namespace}/{task}/data/",
-            files={"file": (data.name, data)},
+            files={"archive": (data.name, data)},
         )
 
     #
