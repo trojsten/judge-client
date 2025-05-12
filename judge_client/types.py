@@ -493,50 +493,50 @@ class TaskLanguage:
     Class representing settings for combination of task and language
     """
 
-    id: int
+    id: int = -1
     """
     Task language ID
     """
-    language: str
+    language: str = ""
     """
     Human readable language name 
     """
-    language_id: str
+    language_id: str = ""
     """
     Language identifier
     """
 
-    image: str
+    image: str = ""
     """
     Image to use for testing (empty for default image)
     """
 
-    cpu_limit: int | None
+    cpu_limit: int | None = None
     """
     Absolute CPU time limit or None if using relative limits 
     """
-    wall_limit: int | None
+    wall_limit: int | None = None
     """
     Absolute total time limit or None if using relative limits 
     """
-    relative_time_limit: float | None
+    relative_time_limit: float | None = None
     """
     Relative time limit multiplier (eg 2 for 2 times more time than time of solution) or None if using absolute limits 
     """
-    relative_measurement_solution: str
+    relative_measurement_solution: str = ""
     """
     Path to solution to use to measure relative time limit or empty string if using absolute limits
     """
-    relative_measurement_task_language: int | None
+    relative_measurement_task_language: int | None = None
     """
     ID of task language of relative measurement solution or None for either current task language or if using absolute limits
     """
-    memory_limit: int | None
+    memory_limit: int | None = None
     """
     Memory limit of language (in kilobytes)
     """
 
-    config_overrides: dict
+    config_overrides: dict = field(default_factory=dict)
     """
     Any configuration options that will override task's config
     """
