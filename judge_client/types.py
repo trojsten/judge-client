@@ -544,87 +544,87 @@ class TaskLanguage:
 
 @dataclass
 class Task(TaskShort):
-    id: int
+    id: int = -1
     """
     Task ID
     """
 
-    public_submit_key: str | None
+    public_submit_key: str | None = None
     """
     Public submit key for task or None if task is not publicly submitable
     """
 
-    version: str
+    version: str = ""
     """
     Task version used for internal versioning
     """
 
-    default_limit_language: str | None
+    default_limit_language: str | None = None
     """
     ID of language used for default limits or None if only specified languages can be used
     """
 
-    config: dict
+    config: dict = field(default_factory=dict)
     """
     Task configuration
     """
 
-    preparer: str
+    preparer: str = ""
     """
     Preparer class-path
     """
-    loader: str
+    loader: str = ""
     """
     Loader class-path
     """
-    decider: str
+    decider: str = ""
     """
     Decider class-path
     """
-    executor: str
+    executor: str = ""
     """
     Executor class-path
     """
-    grader: str
+    grader: str = ""
     """
     Grader class-path
     """
-    mixer: str
+    mixer: str = ""
     """
     Mixer class-path
     """
 
-    image: str
+    image: str = ""
     """
     Image to use for testing (or empty string for default image)
     """
 
-    file_readonly_access: list[str] | None
+    file_readonly_access: list[str] | None = None
     """
     List of paths that are read-only during testing
     """
-    file_readwrite_access: list[str] | None
+    file_readwrite_access: list[str] | None = None
     """
     List of paths that are read-write during testing
     """
-    file_size: int | None
+    file_size: int | None = None
     """
     Maximum file size in kilobytes
     """
-    stack_size: int | None
+    stack_size: int | None = None
     """
     Maximum stack size in kilobytes
     """
-    thread_limit: int | None
+    thread_limit: int | None = None
     """
     Maximum number of threads
     """
-    network: bool
+    network: bool = False
     """
     True if internet access is allowed
     """
 
-    languages: list[TaskLanguage]
+    languages: list[TaskLanguage] = field(default_factory=list)
     """
     List of languages available for this task
     """
