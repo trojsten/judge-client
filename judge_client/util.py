@@ -48,4 +48,4 @@ def _convert[T](dataclass: type[T], data: list[dict]) -> list[T]:
 
 
 def dict_factory(x):
-    return {k: v for (k, v) in x if ((v is not None) and (not k.starts_width("_")))}
+    return {k: v for (k, v) in x if ((v is not None) and (not k.startswith("_")))}
