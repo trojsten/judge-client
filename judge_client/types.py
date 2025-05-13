@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel, Field, PrivateAttr
 
 if TYPE_CHECKING:
     from .client import JudgeClient
@@ -132,8 +133,7 @@ class Priority(Enum):
     """
 
 
-@dataclass
-class Stats:
+class Stats(BaseModel):
     """
     Class containing stats of running process
     """
@@ -160,8 +160,7 @@ class Stats:
     """
 
 
-@dataclass
-class TestResult:
+class TestResult(BaseModel):
     log: str
     """
     Log from test
@@ -185,26 +184,18 @@ class TestResult:
     Score of test as percentage (0-1)
     """
 
-    stats: Stats
+    stats: Stats | None
     """
     Stats of process run in test
     """
 
-    extra_data: dict[Any, Any] = field(default_factory=dict)
+    extra_data: dict[Any, Any] = Field(default_factory=dict)
     """
     Any extra data passed by Judge extensions
     """
 
-    def __post_init__(self):
-        if isinstance(self.verdict, str):
-            self.verdict = Verdict(self.verdict)
 
-        if isinstance(self.stats, dict):
-            self.stats = Stats(**self.stats)
-
-
-@dataclass
-class Limits:
+class Limits(BaseModel):
     """
     Limits for a program
     """
@@ -254,8 +245,7 @@ class Limits:
     """
 
 
-@dataclass
-class Protocol:
+class Protocol(BaseModel):
     tests: list[TestResult] | None = None
     log: str | None = None
 
@@ -287,28 +277,8 @@ class Protocol:
     Limits used for runtime
     """
 
-    def __post_init__(self):
-        if self.tests:
-            for i in range(len(self.tests)):
-                test = self.tests[i]
-                if isinstance(test, dict):
-                    self.tests[i] = TestResult(**test)
 
-        if isinstance(self.final_verdict, str):
-            self.final_verdict = Verdict(self.final_verdict)
-
-        if isinstance(self.compile_stats, dict):
-            self.compile_stats = Stats(**self.compile_stats)
-
-        if isinstance(self.compile_limits, dict):
-            self.compile_limits = Limits(**self.compile_limits)
-
-        if isinstance(self.runtime_limits, dict):
-            self.runtime_limits = Limits(**self.runtime_limits)
-
-
-@dataclass
-class Submit:
+class Submit(BaseModel):
     """
     Class representing Submit
     """
@@ -345,7 +315,7 @@ class Submit:
     """
     Language as string returned from testing (eg Python 3.13.2)
     """
-    protocol: Protocol
+    protocol: Protocol | None = None
     """
     Protocol (may be empty)
     """
@@ -362,26 +332,7 @@ class Submit:
     Time of creation
     """
 
-    _judge_client: JudgeClient | None = field(repr=False, default=None)
-
-    def __post_init__(self):
-        if isinstance(self.protocol, dict):
-            self.protocol = Protocol(**self.protocol)
-
-        if isinstance(self.status, int):
-            self.status = SubmitStatus(self.status)
-
-        if (
-            isinstance(self.testing_status, str)
-            and self.testing_status in TestingStatus
-        ):
-            self.testing_status = TestingStatus(self.testing_status)
-
-        if isinstance(self.last_queued_at, str):
-            self.last_queued_at = datetime.fromisoformat(self.last_queued_at)
-
-        if isinstance(self.created_at, str):
-            self.created_at = datetime.fromisoformat(self.created_at)
+    _judge_client: JudgeClient | None = PrivateAttr()
 
     @property
     def public_protocol_url(self):
@@ -412,8 +363,7 @@ class Submit:
         return self._judge_client.rejudge_submit(self.public_id)
 
 
-@dataclass
-class Language:
+class Language(BaseModel):
     """
     Class representing supported Judge languages
     """
@@ -449,8 +399,7 @@ class Language:
     """
 
 
-@dataclass
-class Namespace:
+class Namespace(BaseModel):
     """
     Class representing a Namespace
     """
@@ -465,18 +414,13 @@ class Namespace:
     Name of the namespace
     """
 
-    priority: Priority | None
+    priority: Priority | None = None
     """
     Default priority of submits in this namespace (or default if not set)
     """
 
-    def __post_init__(self):
-        if isinstance(self.priority, int):
-            self.priority = Priority(self.priority)
 
-
-@dataclass
-class TaskShort:
+class TaskShort(BaseModel):
     name: str
     """
     Task name
@@ -487,8 +431,7 @@ class TaskShort:
     """
 
 
-@dataclass
-class TaskLanguage:
+class TaskLanguage(BaseModel):
     """
     Class representing settings for combination of task and language
     """
@@ -536,14 +479,13 @@ class TaskLanguage:
     Memory limit of language (in kilobytes)
     """
 
-    config_overrides: dict = field(default_factory=dict)
+    config_overrides: dict = Field(default_factory=dict)
     """
     Any configuration options that will override task's config
     """
 
 
-@dataclass
-class Task(TaskShort):
+class Task(TaskShort, BaseModel):
     id: int = -1
     """
     Task ID
@@ -564,7 +506,7 @@ class Task(TaskShort):
     ID of language used for default limits or None if only specified languages can be used
     """
 
-    config: dict = field(default_factory=dict)
+    config: dict = Field(default_factory=dict)
     """
     Task configuration
     """
@@ -624,18 +566,12 @@ class Task(TaskShort):
     True if internet access is allowed
     """
 
-    languages: list[TaskLanguage] = field(default_factory=list)
+    languages: list[TaskLanguage] = Field(default_factory=list)
     """
     List of languages available for this task
     """
 
-    _judge_client: JudgeClient | None = field(repr=False, default=None)
-
-    def __post_init__(self):
-        for i in range(len(self.languages)):
-            item = self.languages[i]
-            if isinstance(item, dict):
-                self.languages[i] = TaskLanguage(**item)
+    _judge_client: JudgeClient | None = PrivateAttr()
 
     @property
     def public_submit_url(self) -> str | None:
