@@ -541,11 +541,11 @@ class Task(TaskShort, BaseModel):
     Image to use for testing (or empty string for default image)
     """
 
-    file_readonly_access: list[str] | None = None
+    file_readonly_access: list[str] = Field(default_factory=list)
     """
     List of paths that are read-only during testing
     """
-    file_readwrite_access: list[str] | None = None
+    file_readwrite_access: list[str] = Field(default_factory=list)
     """
     List of paths that are read-write during testing
     """
