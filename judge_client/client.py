@@ -1,6 +1,5 @@
 import datetime
 from collections.abc import Iterable
-from dataclasses import asdict
 from sys import version as python_version
 from typing import IO
 
@@ -10,7 +9,7 @@ from judge_client import __version__ as judge_client_version
 from judge_client.util import JudgeClientIterator
 
 from .types import Language, Namespace, Priority, Submit, Task, TaskLanguage, TaskShort
-from .util import _convert, dict_factory
+from .util import _convert
 
 
 class JudgeClient:
@@ -115,7 +114,10 @@ class JudgeClient:
         )
 
         try:
-            return Submit(**response.json(), _judge_client=self)
+            ret = Submit(**response.json())
+            ret._judge_client = self
+
+            return ret
         except Exception as e:
             raise ProtocolCorruptedError(
                 "Failed to parse response from the judge system",
@@ -138,7 +140,10 @@ class JudgeClient:
         )
 
         try:
-            return Submit(**response.json(), _judge_client=self)
+            ret = Submit(**response.json())
+            ret._judge_client = self
+
+            return ret
         except Exception as e:
             raise ProtocolCorruptedError(
                 "Failed to parse response from the judge system",
@@ -305,7 +310,10 @@ class JudgeClient:
             f"/api/tasks/{namespace}/{task}/",
         )
 
-        return Task(**response.json(), _judge_client=self)
+        ret = Task(**response.json())
+        ret._judge_client = self
+
+        return ret
 
     def update_task(self, task: Task):
         """
@@ -320,10 +328,13 @@ class JudgeClient:
         """
         response = self._post(
             f"/api/tasks/{task.namespace}/{task.name}/",
-            json=asdict(task, dict_factory=dict_factory),
+            json=task.dict(),
         )
 
-        return Task(**response.json(), _judge_client=self)
+        ret = Task(**response.json())
+        ret._judge_client = self
+
+        return ret
 
     def delete_task(self, namespace: str, task: str):
         """
@@ -347,7 +358,7 @@ class JudgeClient:
         """
         self._post(
             f"/api/tasks/{task.namespace}/",
-            json=asdict(task, dict_factory=dict_factory),
+            json=task.dict(),
         )
 
     def rejudge_task(
@@ -444,7 +455,7 @@ class JudgeClient:
         """
         response = self._post(
             f"/api/tasks/{namespace}/{task}/languages/",
-            json=asdict(task_language, dict_factory=dict_factory),
+            json=task_language.dict(),
         )
 
         return TaskLanguage(**response.json())
@@ -465,7 +476,7 @@ class JudgeClient:
         """
         response = self._post(
             f"/api/tasks/{namespace}/{task}/languages/{task_language.language_id}/",
-            json=asdict(task_language, dict_factory=dict_factory),
+            json=task_language.dict(),
         )
 
         return TaskLanguage(**response.json())
