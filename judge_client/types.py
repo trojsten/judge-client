@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -10,110 +10,230 @@ if TYPE_CHECKING:
     from .client import JudgeClient
 
 
-class SubmitStatus(Enum):
-    QUEUED = 0
+class SubmitStatusItem(object):
+    status: int
+    human_name: dict[str, str]
+
+    def __init__(
+        self,
+        status: int,
+        human_name: dict[str, str],
+    ):
+        self.status = status
+        self._human_name_ = human_name
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.status}>"
+
+
+class SubmitStatus(SubmitStatusItem, Enum):
+    QUEUED = 0, {"en": "Queued", "sk": "Vo fronte"}
     """
     Submit was queued, more info may be available in testing_status
     """
-    FINISHED = 1
+    FINISHED = 1, {"en": "Finished", "sk": "Hotovo"}
     """
     Submit was successfully tested
     """
-    FAILED = 2
+    FAILED = 2, {"en": "Failed", "sk": "Chyba"}
     """
     Submit failed to be tested and will be attempted again
     """
 
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        if isinstance(value, str):
+            value = value.upper()
+            return next((m for m in cls if m._name_.upper() == value), None)
+        elif isinstance(value, int):
+            return next((m for m in cls if m.status == value), None)
 
-class TestingStatus(Enum):
-    WAITING = "waiting"
+    def get_human_name(self, lang: str = "en") -> str:
+        """
+        Returns human name of SubmitStatus in given language (defaults to english if not found)
+        """
+        return self._human_name_.get(lang, self._human_name_["en"])
+
+
+class TestingStatusItem(object):
+    status: str
+    human_name: dict[str, str]
+
+    def __init__(
+        self,
+        status: str,
+        human_name: dict[str, str],
+    ):
+        self.status = status
+        self._human_name_ = human_name
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.status.upper()}>"
+
+
+class TestingStatus(TestingStatusItem, Enum):
+    WAITING = "waiting", {"en": "Waiting in queue", "sk": "Vo fronte"}
     """
     Waiting for testing in queue
     """
 
-    PULLING_IMAGE = "pulling_image"
+    PULLING_IMAGE = (
+        "pulling_image",
+        {"en": "Preparing test environment", "sk": "Príprava testovacieho prostredia"},
+    )
     """
     Pulling docker image
     """
 
-    MEASURING_TIMELIMIT = "measuring_timelimit"
+    MEASURING_TIMELIMIT = (
+        "measuring_timelimit",
+        {"en": "Preparing test environment", "sk": "Príprava testovacieho prostredia"},
+    )
     """
     Measuring relative time limit against solution
     """
 
-    TESTING = "testing"
+    TESTING = "testing", {"en": "Testing", "sk": "Prebieha testovanie"}
     """
     Testing
     """
 
-    DONE = "done"
+    DONE = "done", {"en": "Done", "sk": "Hotovo"}
     """
     Done
     """
 
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        if isinstance(value, str):
+            value = value.upper()
+            return next((m for m in cls if m._name_.upper() == value), None)
 
-class Verdict(Enum):
-    OK = "OK"
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, str):
+            other = other.upper()
+            return self._name_.upper() == other
+        return super().__eq__(other)
+
+    def get_human_name(self, lang: str = "en") -> str:
+        """
+        Returns human name of TestingStatus in given language (defaults to english if not found)
+        """
+        return self._human_name_.get(lang, self._human_name_["en"])
+
+
+class VerdictItem(object):
+    code: str
+    color: Literal["green", "yellow", "orange", "red", "gray"]
+    human_name: dict[str, str]
+
+    def __init__(
+        self,
+        code: str,
+        color: Literal["green", "yellow", "orange", "red", "gray"],
+        human_name: dict[str, str],
+    ):
+        self.code = code
+        self.color = color
+        self._human_name_ = human_name
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.code}>"
+
+
+class Verdict(VerdictItem, Enum):
+    OK = "OK", "green", {"en": "OK", "sk": "OK"}
     """
     Everything executed successfully
     """
 
-    WA = "WA"
+    WA = "WA", "red", {"en": "Wrong Answer", "sk": "Zlá odpoveď"}
     """
     Wrong Answer
     """
 
-    TLE = "TLE"
+    TLE = "TLE", "orange", {"en": "Time Limit Exceeded", "sk": "Časový limit vypršal"}
     """
     Time Limit Exceeded
     """
-    EXC = "EXC"
+    EXC = "EXC", "orange", {"en": "Exception", "sk": "Chyba počas behu programu"}
     """
     Exception (non-zero exit code)
     """
 
-    PRV = "PRV"
+    PRV = (
+        "PRV",
+        "orange",
+        {"en": "Protocol Violation", "sk": "Nesprávny formát výstupu"},
+    )
     """
     Protocol Violation
 
     Used mainly in interactiver to indicate incorrect format of output
     """
 
-    IGN = "IGN"
+    IGN = "IGN", "gray", {"en": "Ignored", "sk": "Ignorované"}
     """
     Ignored.
 
     Test was not run
     """
 
-    MEM = "MEM"
+    MEM = (
+        "MEM",
+        "orange",
+        {"en": "Memory Limit Exceeded", "sk": "Prekročený limit pamäte"},
+    )
     """
     Memory Limit Exceeded
 
     Currently not used anywhere
     """
 
-    CEX = "CEX"
+    CEX = (
+        "CEX",
+        "orange",
+        {"en": "Compilation Exception", "sk": "Chyba počat kompilácie"},
+    )
     """
     Compilation Exception
     """
 
-    SEX = "SEX"
+    SEX = "SEX", "orange", {"en": "Server Exception", "sk": "Chyba servera"}
     """
     Server Exception (error on Judge side)
     """
 
-    POK = "POK"
+    POK = "POK", "yellow", {"en": "Partially OK", "sk": "Čiastočne OK"}
     """
     Partially OK
     """
 
+    CONERR = "CONERR", "red", {"en": "Connection Error", "sk": "Chyba spojenia"}
+    """
+    Connection Error
+
+    Not used in Judge, but may be used by your application
+    """
+
     @classmethod
-    def is_ok(cls, verdict: "Verdict"):
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            value = value.upper()
+            return next((m for m in cls if m._name_.upper() == value), None)
+
+    @classmethod
+    def is_ok(cls, verdict: Verdict):
         """
         Returns True if Verdict is OK or POK
         """
         return verdict in (Verdict.OK, Verdict.POK)
+
+    def get_human_name(self, lang: str = "en") -> str:
+        """
+        Returns human name of Verdict in given language (defaults to english if not found)
+        """
+        return self._human_name_.get(lang, self._human_name_["en"])
 
 
 class Priority(Enum):
