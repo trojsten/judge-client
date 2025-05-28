@@ -103,11 +103,20 @@ class TestingStatus(TestingStatusItem, Enum):
     Done
     """
 
+    UNKNOWN = "unknown", {"en": "Unknown", "sk": "Neznámy stav"}
+    """
+    Unknown status, should not happen in normal operation.
+
+    If you are using custom statuses, please override TestingStatus class to include them.
+    """
+
     @classmethod
     def _missing_(cls, value: object) -> Any:
         if isinstance(value, str):
             value = value.upper()
-            return next((m for m in cls if m._name_.upper() == value), None)
+            return next((m for m in cls if m._name_.upper() == value), cls.UNKNOWN)
+
+        return cls.UNKNOWN
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
