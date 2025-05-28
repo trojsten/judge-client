@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class SubmitStatusItem(object):
     status: int
-    human_name: dict[str, str]
+    _human_name_: dict[str, str]
 
     def __init__(
         self,
@@ -57,7 +57,7 @@ class SubmitStatus(SubmitStatusItem, Enum):
 
 class TestingStatusItem(object):
     status: str
-    human_name: dict[str, str]
+    _human_name_: dict[str, str]
 
     def __init__(
         self,
@@ -134,7 +134,7 @@ class TestingStatus(TestingStatusItem, Enum):
 class VerdictItem(object):
     code: str
     color: Literal["green", "yellow", "orange", "red", "gray"]
-    human_name: dict[str, str]
+    _human_name_: dict[str, str]
 
     def __init__(
         self,
@@ -218,7 +218,7 @@ class Verdict(VerdictItem, Enum):
     Partially OK
     """
 
-    CONERR = "CONERR", "red", {"en": "Connection Error", "sk": "Chyba spojenia"}
+    CONNERR = "CONNERR", "red", {"en": "Connection Error", "sk": "Chyba spojenia"}
     """
     Connection Error
 
