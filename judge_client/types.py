@@ -231,6 +231,13 @@ class Verdict(VerdictItem, Enum):
             value = value.upper()
             return next((m for m in cls if m._name_.upper() == value), None)
 
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, str):
+            value = value.upper()
+            return self._name_.upper() == value
+
+        return super().__eq__(value)
+
     @classmethod
     def is_ok(cls, verdict: Verdict):
         """
