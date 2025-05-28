@@ -45,7 +45,3 @@ class JudgeClientIterator[T]:
 
 def _convert[T](dataclass: type[T], data: list[dict]) -> list[T]:
     return [dataclass(**item) for item in data]
-
-
-def dict_factory(x):
-    return {k: v for (k, v) in x if ((v is not None) and (not k.startswith("_")))}
