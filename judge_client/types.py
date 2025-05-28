@@ -238,6 +238,9 @@ class Verdict(VerdictItem, Enum):
 
         return super().__eq__(value)
 
+    def __hash__(self):
+        return hash(self._name_)
+
     @classmethod
     def is_ok(cls, verdict: Verdict):
         """
