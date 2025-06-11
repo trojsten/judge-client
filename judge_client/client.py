@@ -72,6 +72,19 @@ class JudgeClient:
         return response
 
     #
+    # Misc
+    #
+
+    @property
+    def embed_script_url(self) -> str:
+        """
+        Returns the URL of script for <judge-embed-protocol> custom element.
+
+        :returns: URL of the embed script
+        """
+        return f"{self.judge_url}/static/js/protocol-embed.min.js"
+
+    #
     # Submits
     #
 
