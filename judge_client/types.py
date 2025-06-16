@@ -635,6 +635,15 @@ class Task(TaskShort, BaseModel):
     Public submit key for task or None if task is not publicly submitable
     """
 
+    hide_protocols: bool = False
+    """
+    Whether public protocol views should be hidden (return 404)
+    """
+    show_submit_details: bool = False
+    """
+    Whether to show submit details (logs) for all testcases, not just samples
+    """
+
     version: str = ""
     """
     Task version used for internal versioning
