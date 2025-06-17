@@ -6,6 +6,11 @@ from typing import IO
 import requests
 
 from judge_client import __version__ as judge_client_version
+from judge_client.exceptions import (
+    JudgeConnectionError,
+    ProtocolCorruptedError,
+    UnknownLanguageError,
+)
 from judge_client.util import JudgeClientIterator
 
 from .types import Language, Namespace, Priority, Submit, Task, TaskLanguage, TaskShort
@@ -35,39 +40,44 @@ class JudgeClient:
     # Helpers
     #
 
-    def _get(self, url: str, *args, **kwargs) -> requests.Response:
-        response = self.session.get(self.judge_url + url, *args, **kwargs)
+    _known_exceptions = {
+        "filename: Could not detect language.": UnknownLanguageError,
+    }
 
+    def _handle_exception(self, url: str, response: requests.Response) -> None:
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
-            raise JudgeConnectionError(
-                f"Failed to connect to judge system ({self.judge_url}{url})"
-            ) from e
+            detail: str = f"Failed to connect to judge system ({self.judge_url}{url})"
+            try:
+                details = response.json()
+                if "detail" in details:
+                    detail = details["detail"]
+            except Exception:
+                pass
+
+            exception = self._known_exceptions.get(detail, JudgeConnectionError)
+
+            raise exception(detail) from e
+
+    def _get(self, url: str, *args, **kwargs) -> requests.Response:
+        response = self.session.get(self.judge_url + url, *args, **kwargs)
+
+        self._handle_exception(url, response)
 
         return response
 
     def _post(self, url: str, *args, **kwargs) -> requests.Response:
         response = self.session.post(self.judge_url + url, *args, **kwargs)
 
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as e:
-            raise JudgeConnectionError(
-                f"Failed to connect to judge system ({self.judge_url}{url})"
-            ) from e
+        self._handle_exception(url, response)
 
         return response
 
     def _delete(self, url: str, *args, **kwargs) -> requests.Response:
         response = self.session.delete(self.judge_url + url, *args, **kwargs)
 
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as e:
-            raise JudgeConnectionError(
-                f"Failed to connect to judge system ({self.judge_url}{url})"
-            ) from e
+        self._handle_exception(url, response)
 
         return response
 
@@ -507,28 +517,3 @@ class JudgeClient:
         self._delete(
             f"/api/tasks/{namespace}/{task}/languages/{language_id}/",
         )
-
-
-class JudgeConnectionError(IOError):
-    def __init__(self, message: str):
-        self.message = message
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: {repr(self.message)}"
-
-
-class ProtocolError(ValueError):
-    def __init__(self, message: str, protocol: str):
-        self.message = message
-        self.protocol = protocol
-
-    def __str__(self):
-        return f"{self.__class__.__name__}: {repr(self.message)}\n{self.protocol}"
-
-
-class ProtocolCorruptedError(ProtocolError):
-    pass
-
-
-class ProtocolFormatError(ProtocolError):
-    pass
