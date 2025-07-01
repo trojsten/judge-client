@@ -27,7 +27,7 @@ class JudgeClientIterator[T]:
         return self.__count
 
     def __next__(self):
-        if self.__offset >= self.__count:
+        if self.__offset >= self.__count and self.__count != -1:
             raise StopIteration
 
         if self.__data_offset >= len(self.__data):
