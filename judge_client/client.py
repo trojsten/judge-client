@@ -401,13 +401,14 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
         """
-        self._post(
-            f"/api/tasks/{namespace}/{task}/rejudge/",
-            json={
-                "only_newer": only_newer.isoformat() if only_newer else None,
-                "priority": priority.value if priority else None,
-            },
-        )
+        data: dict = {}
+
+        if only_newer is not None:
+            data["only_newer"] = only_newer.isoformat()
+        if priority is not None:
+            data["priority"] = priority.value
+
+        self._post(f"/api/tasks/{namespace}/{task}/rejudge/", json=data)
 
     #
     # Task data
