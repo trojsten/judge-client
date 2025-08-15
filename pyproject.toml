@@ -8,3 +8,12 @@ dependencies = [
     "pydantic>=2.11.4,<3",
     "requests (>=2.32.3,<3.0.0)",
 ]
+
+[project.optional-dependencies]
+actions = [
+    "input-tool>=2.0.2",
+    "loguru>=0.7.3",
+]
+
+[tool.uv.sources]
+input-tool = { git = "https://github.com/fezjo/input-tool", branch = "master" }

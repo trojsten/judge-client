@@ -8,6 +8,7 @@ import requests
 from judge_client import __version__ as judge_client_version
 from judge_client.exceptions import (
     JudgeConnectionError,
+    NotFoundError,
     ProtocolCorruptedError,
     UnknownLanguageError,
 )
@@ -42,6 +43,7 @@ class JudgeClient:
 
     _known_exceptions = {
         "filename: Could not detect language.": UnknownLanguageError,
+        "Not Found": NotFoundError,
     }
 
     def _handle_exception(self, url: str, response: requests.Response) -> None:
@@ -183,6 +185,7 @@ class JudgeClient:
 
         :returns: Program as bytes
         """
+
         response = self._get(f"/api/submits/{public_id}/program/")
 
         return response.content
@@ -349,6 +352,7 @@ class JudgeClient:
 
         :returns: Task
         """
+
         response = self._post(
             f"/api/tasks/{task.namespace}/{task.name}/",
             json=task.dict(),
@@ -368,6 +372,7 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
         """
+
         self._delete(f"/api/tasks/{namespace}/{task}/")
 
     def create_task(self, task: Task):
@@ -378,11 +383,19 @@ class JudgeClient:
         :param task:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
+
+        :returns: The created task
         """
-        self._post(
+
+        response = self._post(
             f"/api/tasks/{task.namespace}/",
             json=task.dict(),
         )
+
+        ret = Task(**response.json())
+        ret._judge_client = self
+
+        return ret
 
     def rejudge_task(
         self,
@@ -401,6 +414,7 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
         """
+
         data: dict = {}
 
         if only_newer is not None:
@@ -425,6 +439,7 @@ class JudgeClient:
 
         :returns: ZIP of data as bytes
         """
+
         response = self._get(f"/api/tasks/{namespace}/{task}/data/")
 
         return response.content
@@ -439,6 +454,7 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
         """
+
         self._post(
             f"/api/tasks/{namespace}/{task}/data/",
             files={"archive": (data.name, data)},
@@ -459,6 +475,7 @@ class JudgeClient:
 
         :returns: list of task languages
         """
+
         response = self._get(
             f"/api/tasks/{namespace}/{task}/languages/",
         )
@@ -477,6 +494,7 @@ class JudgeClient:
 
         :returns: TaskLanguage
         """
+
         response = self._post(
             f"/api/tasks/{namespace}/{task}/languages/",
             json=task_language.dict(),
@@ -498,6 +516,7 @@ class JudgeClient:
 
         :returns: TaskLanguage
         """
+
         response = self._post(
             f"/api/tasks/{namespace}/{task}/languages/{task_language.language_id}/",
             json=task_language.dict(),
@@ -515,6 +534,40 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
         """
+
         self._delete(
             f"/api/tasks/{namespace}/{task}/languages/{language_id}/",
         )
+
+    def set_task_languages(
+        self, namespace: str, task: str, task_languages: list[TaskLanguage]
+    ) -> None:
+        """
+        Sets task languages - creates missing languages, updates changed and deletes
+        all other.
+
+        This is shortcut to calling `get_task_languages`, `add_task_language`,
+        `update_task_language` and `delete_task_language`.
+
+        :param namespace:
+        :param task:
+        :param task_languages: list of task languages to set
+
+        :raises JudgeConnectionError: If the connection to the judge system fails.
+        """
+
+        current_languages = self.get_task_languages(namespace, task)
+
+        current_language_ids = {language.language_id for language in current_languages}
+
+        for lang in task_languages:
+            if lang.language_id not in current_language_ids:
+                self.add_task_language(namespace, task, lang)
+            else:
+                self.update_task_language(namespace, task, lang)
+
+        new_language_ids = {language.language_id for language in task_languages}
+
+        for lang in current_languages:
+            if lang.language_id not in new_language_ids:
+                self.delete_task_language(namespace, task, lang.language_id)

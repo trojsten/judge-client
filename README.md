@@ -2,6 +2,13 @@
 
 Client for Trojsten Judge System API.
 
+## Instalation
+
+### uv
+```sh
+uv add "git+https://github.com/trojsten/judge-client"
+```
+
 ## Usage
 ```python
 from judge_client.client import JudgeClient

@@ -10,6 +10,10 @@ class JudgeConnectionError(IOError, JudgeError):
     pass
 
 
+class NotFoundError(ValueError, JudgeError):
+    pass
+
+
 class UnknownLanguageError(ValueError, JudgeError):
     pass
 
