@@ -57,10 +57,6 @@ class DeployAction(TasksAction):
         return None
 
     def build_task(self, task: Path) -> bool:
-        if (task / "test").exists():
-            logger.warning("Using data from 'test' folder")
-            return True
-
         if (task / "idf").exists():
             logger.info("Building task")
             logger.info(" - Pulling sample data")
@@ -119,17 +115,26 @@ class DeployAction(TasksAction):
 
             return True
 
-        elif self.options.TESTCASES_DIR is not None:
+        elif (
+            self.options.TESTCASES_DIR is not None
+            and (
+                src := self.options.TESTCASES_DIR
+                / task.relative_to(self.options.TASK_DIR)
+                / "test"
+            ).exists()
+        ):
             logger.info(
                 f"Not building task (no generator found), using data from '{self.options.TESTCASES_DIR}'"
             )
             copytree(
-                self.options.TESTCASES_DIR
-                / task.relative_to(self.options.TASK_DIR)
-                / "test",
+                src,
                 task / "test",
             )
 
+            return True
+
+        elif (task / "test").exists():
+            logger.warning("Using data from 'test' folder")
             return True
 
         return False
