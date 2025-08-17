@@ -36,6 +36,12 @@ class DeployAction(TasksAction):
             task.relative_to(self.options.TASK_DIR)
         ).replace("/", "-")
 
+    def get_task_problem_statement_path(self, task: Path) -> Path | None:
+        if (path := task.parent / "zadanie.md").exists():
+            return path
+        elif (path := task.parent / "zadania" / f"{task.name}.md").exists():
+            return path
+
     def get_config(self, task: Path) -> dict | None:
         current_dir = task
 
@@ -64,11 +70,20 @@ class DeployAction(TasksAction):
             if shutil.which("input-sample") is None:
                 extra_args = ["uv", "run"]
 
-            subprocess.run(
-                extra_args + ["input-sample", "../zadanie.md"],
-                cwd=task,
-                check=True,
-            )
+            problem_statement_path = self.get_task_problem_statement_path(task)
+
+            if problem_statement_path is None:
+                logger.warning(
+                    "No problem statement found in standard paths. Samples will NOT be extracted."
+                )
+
+            else:
+                subprocess.run(
+                    extra_args
+                    + ["input-sample", str(problem_statement_path.absolute())],
+                    cwd=task,
+                    check=True,
+                )
 
             logger.info(" - Generating inputs")
             subprocess.run(
