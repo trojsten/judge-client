@@ -56,6 +56,8 @@ class DeployAction(TasksAction):
 
         return None
 
+    _input_tool_updates_checked = False
+
     def build_task(self, task: Path) -> bool:
         if (task / "idf").exists():
             logger.info("Building task")
@@ -82,8 +84,17 @@ class DeployAction(TasksAction):
                 )
 
             logger.info(" - Generating inputs")
+            if not self._input_tool_updates_checked:
+                logger.info("Checking for input tool updates")
+                subprocess.run(
+                    extra_args + ["itool", "checkupdates"],
+                    cwd=task,
+                    check=True,
+                )
+                self._input_tool_updates_checked = True
+
             subprocess.run(
-                extra_args + ["input-generator", "idf"],
+                extra_args + ["input-generator", "--no-update-check", "idf"],
                 cwd=task,
                 check=True,
             )
