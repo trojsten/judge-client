@@ -18,7 +18,7 @@ class Action:
         """
         Options class that should handle loading all the options from the environment
         variables
-.        """
+        ."""
 
         def _env(self, name: str, default: Any = None, required: bool = False) -> str:
             val = os.environ.get(name, default)
@@ -49,38 +49,6 @@ class TasksAction(Action):
 
             self.TASK_DIR = Path(self._env("TASK_DIR", ".")).absolute()
 
-    options: Options  # type: ignore
-
-    def get_tasks(self) -> list[Path]:
-        return [
-            self.options.TASK_DIR / task
-            for task in glob("**/task", root_dir=self.options.TASK_DIR, recursive=True)
-        ]
-
-    def should_process_task(self, task: Path) -> bool:
-        return True
-
-    def process_task(self, task: Path) -> None:
-        raise NotImplementedError
-
-    def run(self, *args, **kwargs):
-        for task in self.get_tasks():
-            if not self.should_process_task(task):
-                logger.info(f"Skipping task {task}")
-                continue
-
-            try:
-                self.process_task(task)
-            except Exception:
-                logger.exception(f"Failed to process task {task}")
-                exit(1)
-
-
-class TrackChangedFilesAction(TasksAction):
-    class Options(TasksAction.Options):
-        def __init__(self):
-            super().__init__()
-
             self.TRACK_CHANGED_FILES = (
                 self._env("JUDGE_TRACK_CHANGED_FILES", "false").lower() == "true"
             )
@@ -91,7 +59,13 @@ class TrackChangedFilesAction(TasksAction):
                     for x in self._env("JUDGE_CHANGED_FILES", "").split(" ")
                 ]
 
-    options: Options  # type:ignore
+    options: Options  # type: ignore
+
+    def get_tasks(self) -> list[Path]:
+        return [
+            self.options.TASK_DIR / task
+            for task in glob("**/task", root_dir=self.options.TASK_DIR, recursive=True)
+        ]
 
     def should_process_task(self, task: Path) -> bool:
         if self.options.TRACK_CHANGED_FILES and not any(
@@ -99,7 +73,10 @@ class TrackChangedFilesAction(TasksAction):
         ):
             return False
 
-        return super().should_process_task(task)
+        return True
+
+    def process_task(self, task: Path) -> None:
+        raise NotImplementedError
 
     def run(self, *args, **kwargs):
         self.changed_paths = set[Path]()
@@ -120,4 +97,13 @@ class TrackChangedFilesAction(TasksAction):
             for path in self.changed_paths:
                 logger.info(f" - {path}")
 
-        return super().run()
+        for task in self.get_tasks():
+            if not self.should_process_task(task):
+                logger.info(f"Skipping task {task}")
+                continue
+
+            try:
+                self.process_task(task)
+            except Exception:
+                logger.exception(f"Failed to process task {task}")
+                exit(1)
