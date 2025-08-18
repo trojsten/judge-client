@@ -20,10 +20,12 @@ class Action:
         variables
         ."""
 
+        logger = logger
+
         def _env(self, name: str, default: Any = None, required: bool = False) -> str:
             val = os.environ.get(name, default)
             if val is None and required:
-                logger.error(f"Missing environment variable: {name}")
+                self.logger.error(f"Missing environment variable: {name}")
                 exit(1)
             return val
 
@@ -32,6 +34,7 @@ class Action:
             self.API_ORIGIN = self._env("JUDGE_API_ORIGIN", "https://judge.ksp.sk")
 
     options: Options
+    logger = logger
 
     def __init__(self):
         self.options = self.Options()
@@ -82,10 +85,10 @@ class TasksAction(Action):
         self.changed_paths = set[Path]()
 
         if self.options.TRACK_CHANGED_FILES:
-            logger.info("Changed files:")
+            self.logger.info("Changed files:")
 
             for file in self.options.CHANGED_FILES:
-                logger.info(f" - {file}")
+                self.logger.info(f" - {file}")
 
                 path = Path("/".join(file.split("/")[:2]))
                 if path.is_file():
@@ -93,17 +96,17 @@ class TasksAction(Action):
 
                 self.changed_paths.add(path)
 
-            logger.info("Extracted changed paths:")
+            self.logger.info("Extracted changed paths:")
             for path in self.changed_paths:
-                logger.info(f" - {path}")
+                self.logger.info(f" - {path}")
 
         for task in self.get_tasks():
             if not self.should_process_task(task):
-                logger.info(f"Skipping task {task}")
+                self.logger.info(f"Skipping task {task}")
                 continue
 
             try:
                 self.process_task(task)
             except Exception:
-                logger.exception(f"Failed to process task {task}")
+                self.logger.exception(f"Failed to process task {task}")
                 exit(1)
