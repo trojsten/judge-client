@@ -111,6 +111,8 @@ class DeployAction(TasksAction):
 
             if (task / "checker.py").exists():
                 cmdline.extend(["-d", "checker.py"])
+            elif (task / "checker.cpp").exists():
+                cmdline.extend(["-d", "checker.cpp"])
 
             for sol in (task / "sols").iterdir():
                 if sol.is_file() and sol.match("sol.*"):
