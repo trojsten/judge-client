@@ -7,6 +7,8 @@ from copy import deepcopy
 from pathlib import Path
 from shutil import copytree, rmtree
 
+from deepmerge import always_merger
+
 from judge_client.actions import TasksAction
 from judge_client.exceptions import NotFoundError
 from judge_client.types import Task, TaskLanguage
@@ -44,7 +46,9 @@ class DeployAction(TasksAction):
         elif (path := task.parent / "zadania" / f"{task.name}.md").exists():
             return path
 
-    def get_config(self, task: Path) -> dict | None:
+    def get_config(self, task: Path) -> Task | None:
+        data: dict | None = None
+
         current_dir = task
 
         while current_dir != Path(self.options.TASK_DIR).parent:
@@ -52,11 +56,27 @@ class DeployAction(TasksAction):
 
             if task_file.exists():
                 with open(task_file, "r") as f:
-                    return json.load(f)
+                    d = json.load(f)
+
+                    merge = d.get("__merge__", False)
+
+                    if "__merge__" in d:
+                        del d["__merge__"]
+
+                    if data is None:
+                        data = d
+                    else:
+                        data = always_merger.merge(d, data)
+
+                    if not merge:
+                        break
 
             current_dir = current_dir.parent
 
-        return None
+        if data is None:
+            return None
+
+        return Task(**data)
 
     _input_tool_updates_checked = False
 
@@ -207,36 +227,28 @@ class DeployAction(TasksAction):
 
             new_task = deepcopy(task_config)
 
-            if "default_limit_language" in new_task:
-                del new_task["default_limit_language"]
-            if "languages" in new_task:
-                del new_task["languages"]
+            new_task.name = task_name
+            new_task.namespace = self.options.NAMESPACE
 
-            old_task = self.judge_client.create_task(
-                Task(
-                    name=task_name,
-                    namespace=self.options.NAMESPACE,
-                    **new_task,
-                )
-            )
+            old_task = self.judge_client.create_task(new_task)
 
         task_languages: list[TaskLanguage] = []
         find_default_language = False
 
-        for _, language in enumerate(task_config["languages"]):
-            key = "relative_measurement_solution"
-            if key in language and not (task / language[key]).exists():
+        for _, language in enumerate(task_config.languages):
+            sol = language.relative_measurement_solution
+            if sol is not None and not (task / sol).exists():
                 self.logger.warning(
-                    f"Ignoring language {language['language_id']} - it has relative measurement but solution '{language[key]}' was not found"
+                    f"Ignoring language {language.language_id} - it has relative measurement but solution '{sol}' was not found"
                 )
 
-                if task_config["default_limit_language"] == language["language_id"]:
+                if task_config.default_limit_language == language.language_id:
                     self.logger.warning(
-                        f"That was the 'default_limit_language'. Please create '{language[key]}' or change 'default_limit_language'."
+                        f"That was the 'default_limit_language'. Please create '{sol}' or change 'default_limit_language'."
                     )
                     find_default_language = True
             else:
-                task_languages.append(TaskLanguage(**language))
+                task_languages.append(language)
 
         if len(task_languages) == 0:
             self.logger.error(
@@ -245,9 +257,9 @@ class DeployAction(TasksAction):
             exit(1)
 
         if find_default_language:
-            task_config["default_limit_language"] = task_languages[0].language_id
+            task_config.default_limit_language = task_languages[0].language_id
             self.logger.warning(
-                f"Changed default_limit_language to {task_config['default_limit_language']}"
+                f"Changed default_limit_language to {task_config.default_limit_language}"
             )
 
         self.judge_client.set_task_languages(
@@ -260,12 +272,10 @@ class DeployAction(TasksAction):
         self.logger.info("Updating task")
 
         updated_task = deepcopy(task_config)
+        updated_task.name = task_name
+        updated_task.namespace = self.options.NAMESPACE
 
-        del updated_task["languages"]
-
-        self.judge_client.update_task(
-            Task(namespace=self.options.NAMESPACE, name=task_name, **updated_task)
-        )
+        self.judge_client.update_task(updated_task)
 
         # Upload task data
         self.logger.info("Compressing task data")
