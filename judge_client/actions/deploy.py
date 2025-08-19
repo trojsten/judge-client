@@ -82,7 +82,7 @@ class DeployAction(TasksAction):
 
     _input_tool_updates_checked = False
 
-    def build_task(self, task: Path) -> bool:
+    def build_task(self, task: Path, config: Task) -> bool:
         for prog in ("checker.cpp", "check.cpp", "checker.cc", "check.cc"):
             if (task / prog).exists():
                 source = (task / prog).absolute()
@@ -146,37 +146,44 @@ class DeployAction(TasksAction):
                 cwd=task,
                 check=True,
             )
-            self.logger.info(" - Running solutions to generate outputs")
-            cmdline = extra_args + [
-                "input-tester",
-                "--pythoncmd",
-                "pypy3",
-                "-t",
-                "5",
-            ]
 
-            # TODO: maybe use checker_command from task config instead?
-            for checker in (
-                "checker.py",
-                "check.py",
-                "checker.cpp",
-                "check.cpp",
-                "checker.cc",
-                "check.cc",
-            ):
-                if (task / checker).exists():
-                    cmdline.extend(["-d", checker])
-                    break
+            if config.executor == "judge.default.executor.Interactive":
+                self.logger.info(
+                    " - Not running solutions to generate outputs as task is interactive"
+                )
 
-            for sol in (task / "sols").iterdir():
-                if sol.is_file() and sol.match("sol.*"):
-                    cmdline.append(str(sol.relative_to(task)))
+            else:
+                self.logger.info(" - Running solutions to generate outputs")
+                cmdline = extra_args + [
+                    "input-tester",
+                    "--pythoncmd",
+                    "pypy3",
+                    "-t",
+                    "5",
+                ]
 
-            subprocess.run(
-                cmdline,
-                cwd=task,
-                check=True,
-            )
+                # TODO: maybe use checker_command from task config instead?
+                for checker in (
+                    "checker.py",
+                    "check.py",
+                    "checker.cpp",
+                    "check.cpp",
+                    "checker.cc",
+                    "check.cc",
+                ):
+                    if (task / checker).exists():
+                        cmdline.extend(["-d", checker])
+                        break
+
+                for sol in (task / "sols").iterdir():
+                    if sol.is_file() and sol.match("sol.*"):
+                        cmdline.append(str(sol.relative_to(task)))
+
+                subprocess.run(
+                    cmdline,
+                    cwd=task,
+                    check=True,
+                )
 
             if (task / "prog").exists():
                 self.logger.info("Deleting 'prog' dir")
@@ -245,7 +252,7 @@ class DeployAction(TasksAction):
             self.logger.error(f"Failed to load task config for {task_name}")
             exit(1)
 
-        if not self.build_task(task):
+        if not self.build_task(task, task_config):
             self.logger.error(f"Failed to build task {task_name}")
             exit(1)
 
