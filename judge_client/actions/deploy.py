@@ -83,6 +83,30 @@ class DeployAction(TasksAction):
     _input_tool_updates_checked = False
 
     def build_task(self, task: Path) -> bool:
+        for prog in ("checker.cpp", "check.cpp", "checker.cc", "check.cc"):
+            if (task / prog).exists():
+                source = (task / prog).absolute()
+                dest = (task / prog).with_suffix(".bin").absolute()
+
+                self.logger.info(f"Compiling {source} to {dest}")
+
+                subprocess.run(
+                    [
+                        "/usr/bin/g++",
+                        "-static",
+                        "-std=c++2b",
+                        "-fmax-errors=100",
+                        "-O2",
+                        "-Wall",
+                        "-Wextra",
+                        "-o",
+                        str(dest),
+                        str(source),
+                    ],
+                    cwd=task,
+                    check=True,
+                )
+
         if (task / "idf").exists():
             self.logger.info("Building task")
             self.logger.info(" - Pulling sample data")
@@ -131,10 +155,18 @@ class DeployAction(TasksAction):
                 "5",
             ]
 
-            if (task / "checker.py").exists():
-                cmdline.extend(["-d", "checker.py"])
-            elif (task / "checker.cpp").exists():
-                cmdline.extend(["-d", "checker.cpp"])
+            # TODO: maybe use checker_command from task config instead?
+            for checker in (
+                "checker.py",
+                "check.py",
+                "checker.cpp",
+                "check.cpp",
+                "checker.cc",
+                "check.cc",
+            ):
+                if (task / checker).exists():
+                    cmdline.extend(["-d", checker])
+                    break
 
             for sol in (task / "sols").iterdir():
                 if sol.is_file() and sol.match("sol.*"):
