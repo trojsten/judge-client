@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
-from copy import deepcopy
 from pathlib import Path
 from shutil import copytree, rmtree
 
@@ -46,7 +45,7 @@ class DeployAction(TasksAction):
         elif (path := task.parent / "zadania" / f"{task.name}.md").exists():
             return path
 
-    def get_config(self, task: Path) -> Task | None:
+    def get_config(self, task: Path, name: str, namespace: str) -> Task | None:
         data: dict | None = None
 
         current_dir = task
@@ -75,6 +74,9 @@ class DeployAction(TasksAction):
 
         if data is None:
             return None
+
+        data["name"] = name
+        data["namespace"] = namespace
 
         return Task(**data)
 
@@ -205,7 +207,7 @@ class DeployAction(TasksAction):
         task_name = self.get_task_name(task)
         self.logger.info(f"Processing task {task_name}")
 
-        task_config = self.get_config(task)
+        task_config = self.get_config(task, task_name, self.options.NAMESPACE)
 
         if task_config is None:
             self.logger.error(f"Failed to load task config for {task_name}")
@@ -225,12 +227,7 @@ class DeployAction(TasksAction):
         if not old_task:
             self.logger.info("Creating task")
 
-            new_task = deepcopy(task_config)
-
-            new_task.name = task_name
-            new_task.namespace = self.options.NAMESPACE
-
-            old_task = self.judge_client.create_task(new_task)
+            old_task = self.judge_client.create_task(task_config)
 
         task_languages: list[TaskLanguage] = []
         find_default_language = False
@@ -271,11 +268,7 @@ class DeployAction(TasksAction):
         # Update task settings
         self.logger.info("Updating task")
 
-        updated_task = deepcopy(task_config)
-        updated_task.name = task_name
-        updated_task.namespace = self.options.NAMESPACE
-
-        self.judge_client.update_task(updated_task)
+        self.judge_client.update_task(task_config)
 
         # Upload task data
         self.logger.info("Compressing task data")
