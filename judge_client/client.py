@@ -10,6 +10,7 @@ from judge_client.exceptions import (
     JudgeConnectionError,
     NotFoundError,
     ProtocolCorruptedError,
+    TaskNotFoundError,
     UnknownLanguageError,
 )
 from judge_client.util import JudgeClientIterator
@@ -43,7 +44,7 @@ class JudgeClient:
 
     _known_exceptions = {
         "filename: Could not detect language.": UnknownLanguageError,
-        "task: Not found.": NotFoundError,
+        "task: Not found.": TaskNotFoundError,
         "Not Found": NotFoundError,
     }
 
