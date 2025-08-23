@@ -110,3 +110,6 @@ class TasksAction(Action):
             except Exception:
                 self.logger.exception(f"Failed to process task {task}")
                 exit(1)
+
+
+__all__ = ["Action", "TasksAction"]

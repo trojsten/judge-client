@@ -45,3 +45,6 @@ class JudgeClientIterator[T]:
 
 def _convert[T](dataclass: type[T], data: list[dict]) -> list[T]:
     return [dataclass(**item) for item in data]
+
+
+__all__ = ["JudgeClientIterator"]

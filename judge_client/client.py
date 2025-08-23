@@ -43,6 +43,7 @@ class JudgeClient:
 
     _known_exceptions = {
         "filename: Could not detect language.": UnknownLanguageError,
+        "task: Not found.": NotFoundError,
         "Not Found": NotFoundError,
     }
 
@@ -571,3 +572,8 @@ class JudgeClient:
         for lang in current_languages:
             if lang.language_id not in new_language_ids:
                 self.delete_task_language(namespace, task, lang.language_id)
+
+
+__all__ = [
+    "JudgeClient",
+]

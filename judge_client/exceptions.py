@@ -14,6 +14,10 @@ class NotFoundError(ValueError, JudgeError):
     pass
 
 
+class TaskNotFoundError(NotFoundError):
+    pass
+
+
 class UnknownLanguageError(ValueError, JudgeError):
     pass
 

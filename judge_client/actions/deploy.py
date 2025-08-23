@@ -333,3 +333,6 @@ class DeployAction(TasksAction):
                             filename=sol.name,
                             program=sol.read_bytes(),
                         )
+
+
+__all__ = ["DeployAction"]

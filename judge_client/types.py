@@ -730,3 +730,21 @@ class Task(TaskShort, BaseModel):
             return None
 
         return f"{self._judge_client.judge_url}/public/submit/{self.public_submit_key}/"
+
+
+__all__ = [
+    "SubmitStatus",
+    "TestingStatus",
+    "Verdict",
+    "Priority",
+    "Stats",
+    "TestResult",
+    "Limits",
+    "Protocol",
+    "Submit",
+    "Language",
+    "Namespace",
+    "TaskShort",
+    "TaskLanguage",
+    "Task",
+]
