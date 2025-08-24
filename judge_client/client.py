@@ -227,7 +227,10 @@ class JudgeClient:
             )
 
             data = response.json()
-            return data["count"], _convert(Submit, data["items"])
+            items = _convert(Submit, data["items"])
+            for item in items:
+                item._judge_client = self
+            return data["count"], items
 
         return JudgeClientIterator(offset, fetch_data)
 
