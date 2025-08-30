@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 from shutil import copytree, rmtree
 
@@ -266,7 +267,11 @@ class DeployAction(TasksAction):
         if not old_task:
             self.logger.info("Creating task")
 
-            old_task = self.judge_client.create_task(task_config)
+            new_config = deepcopy(task_config)
+            new_config.default_limit_language = None
+            new_config.languages = []
+
+            old_task = self.judge_client.create_task(new_config)
 
         task_languages: list[TaskLanguage] = []
         find_default_language = False
