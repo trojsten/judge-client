@@ -609,9 +609,9 @@ class TaskLanguage(BaseModel):
     """
     Path to solution to use to measure relative time limit or empty string if using absolute limits
     """
-    relative_measurement_task_language: int | None = None
+    relative_measurement_task_language: str | None = None
     """
-    ID of task language of relative measurement solution or None for either current task language or if using absolute limits
+    Language ID of task language of relative measurement solution or None for either current task language or if using absolute limits
     """
     memory_limit: int | None = None
     """
