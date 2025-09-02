@@ -329,10 +329,11 @@ class DeployAction(TasksAction):
                 task_languages.append(
                     TaskLanguage(
                         language_id=slow_language,
+                        memory_limit=default_limit_language.memory_limit,
                         relative_time_limit=default_limit_language.relative_time_limit
                         * coefficient,
-                        memory_limit=default_limit_language.memory_limit,
                         relative_measurement_solution=default_limit_language.relative_measurement_solution,
+                        relative_measurement_task_language=default_limit_language.language_id,
                     )
                 )
                 self.logger.info(
