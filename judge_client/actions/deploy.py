@@ -33,6 +33,8 @@ class DeployAction(TasksAction):
 
     options: Options  # type:ignore
 
+    slow_language_coefficients: dict[str, int] = {}
+
     def get_task_name(self, task: Path) -> str:
         # KSP-school
         # return str(task.relative_to(self.options.TASK_DIR)).split("/")[1]
@@ -276,12 +278,15 @@ class DeployAction(TasksAction):
         task_languages: list[TaskLanguage] = []
         find_default_language = False
 
+        removed_languages = set[str]()
+
         for _, language in enumerate(task_config.languages):
             sol = language.relative_measurement_solution
             if sol is not None and not (task / sol).exists():
                 self.logger.warning(
                     f"Ignoring language {language.language_id} - it has relative measurement but solution '{sol}' was not found"
                 )
+                removed_languages.add(language.language_id)
 
                 if task_config.default_limit_language == language.language_id:
                     self.logger.warning(
@@ -302,6 +307,37 @@ class DeployAction(TasksAction):
             self.logger.warning(
                 f"Changed default_limit_language to {task_config.default_limit_language}"
             )
+
+        default_limit_language = next(
+            (
+                lang
+                for lang in task_languages
+                if lang.language_id == task_config.default_limit_language
+            ),
+            None,
+        )
+
+        if default_limit_language is not None:
+            for slow_language in removed_languages:
+                if slow_language not in self.slow_language_coefficients:
+                    continue
+                if default_limit_language.relative_time_limit is None:
+                    continue
+
+                coefficient = self.slow_language_coefficients.get(slow_language, 2)
+
+                task_languages.append(
+                    TaskLanguage(
+                        language_id=slow_language,
+                        relative_time_limit=default_limit_language.relative_time_limit
+                        * coefficient,
+                        memory_limit=default_limit_language.memory_limit,
+                        relative_measurement_solution=default_limit_language.relative_measurement_solution,
+                    )
+                )
+                self.logger.info(
+                    f"Readded slow language {slow_language} automatically with {coefficient}× relative_time_limit of {default_limit_language.language_id}"
+                )
 
         self.judge_client.set_task_languages(
             self.options.NAMESPACE,
