@@ -239,7 +239,7 @@ class DeployAction(TasksAction):
                     "--pythoncmd",
                     "pypy3",
                     "-t",
-                    "5",
+                    "10",
                 ]
 
                 # TODO: maybe use checker_command from task config instead?
