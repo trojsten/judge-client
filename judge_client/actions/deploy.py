@@ -85,7 +85,77 @@ class DeployAction(TasksAction):
 
     _input_tool_updates_checked = False
 
-    def build_task(self, task: Path, config: Task) -> bool:
+    def get_languages(self, task: Path, task_config: Task) -> list[TaskLanguage]:
+        task_languages: list[TaskLanguage] = []
+        find_default_language = False
+
+        removed_languages = set[str]()
+
+        for _, language in enumerate(task_config.languages):
+            sol = language.relative_measurement_solution
+            if sol is not None and not (task / sol).exists():
+                self.logger.warning(
+                    f"Ignoring language {language.language_id} - it has relative measurement but solution '{sol}' was not found"
+                )
+                removed_languages.add(language.language_id)
+
+                if task_config.default_limit_language == language.language_id:
+                    self.logger.warning(
+                        f"That was the 'default_limit_language'. Please create '{sol}' or change 'default_limit_language'."
+                    )
+                    find_default_language = True
+            else:
+                task_languages.append(language)
+
+        if len(task_languages) == 0:
+            self.logger.error(
+                f"No valid languages found in task {task_config.name}. Please add at least one language."
+            )
+            exit(1)
+
+        if find_default_language:
+            task_config.default_limit_language = task_languages[0].language_id
+            self.logger.warning(
+                f"Changed default_limit_language to {task_config.default_limit_language}"
+            )
+
+        default_limit_language = next(
+            (
+                lang
+                for lang in task_languages
+                if lang.language_id == task_config.default_limit_language
+            ),
+            None,
+        )
+
+        if default_limit_language is not None:
+            for slow_language in removed_languages:
+                if slow_language not in self.slow_language_coefficients:
+                    continue
+                if default_limit_language.relative_time_limit is None:
+                    continue
+
+                coefficient = self.slow_language_coefficients.get(slow_language, 2)
+
+                task_languages.append(
+                    TaskLanguage(
+                        language_id=slow_language,
+                        memory_limit=default_limit_language.memory_limit,
+                        relative_time_limit=default_limit_language.relative_time_limit
+                        * coefficient,
+                        relative_measurement_solution=default_limit_language.relative_measurement_solution,
+                        relative_measurement_task_language=default_limit_language.language_id,
+                    )
+                )
+                self.logger.info(
+                    f"Readded slow language {slow_language} automatically with {coefficient}× relative_time_limit of {default_limit_language.language_id}"
+                )
+
+        return task_languages
+
+    def build_task(
+        self, task: Path, config: Task, languages: list[TaskLanguage]
+    ) -> bool:
         for prog in ("checker.cpp", "check.cpp", "checker.cc", "check.cc"):
             if (task / prog).exists():
                 source = (task / prog).absolute()
@@ -155,6 +225,13 @@ class DeployAction(TasksAction):
                     " - Not running solutions to generate outputs as task is interactive"
                 )
 
+            elif all(
+                language.language_id in {"custom", "make"} for language in languages
+            ):
+                self.logger.info(
+                    " - Not running solutions to generate outputs as task has custom languages only"
+                )
+
             else:
                 self.logger.info(" - Running solutions to generate outputs")
                 cmdline = extra_args + [
@@ -178,6 +255,7 @@ class DeployAction(TasksAction):
                         cmdline.extend(["-d", checker])
                         break
 
+                # TODO: maybe use sols from relative measurement if present?
                 for sol in (task / "sols").iterdir():
                     if sol.is_file() and sol.match("sol.*"):
                         cmdline.append(str(sol.relative_to(task)))
@@ -255,7 +333,9 @@ class DeployAction(TasksAction):
             self.logger.error(f"Failed to load task config for {task_name}")
             exit(1)
 
-        if not self.build_task(task, task_config):
+        task_languages = self.get_languages(task, task_config)
+
+        if not self.build_task(task, task_config, task_languages):
             self.logger.error(f"Failed to build task {task_name}")
             exit(1)
 
@@ -274,71 +354,6 @@ class DeployAction(TasksAction):
             new_config.languages = []
 
             old_task = self.judge_client.create_task(new_config)
-
-        task_languages: list[TaskLanguage] = []
-        find_default_language = False
-
-        removed_languages = set[str]()
-
-        for _, language in enumerate(task_config.languages):
-            sol = language.relative_measurement_solution
-            if sol is not None and not (task / sol).exists():
-                self.logger.warning(
-                    f"Ignoring language {language.language_id} - it has relative measurement but solution '{sol}' was not found"
-                )
-                removed_languages.add(language.language_id)
-
-                if task_config.default_limit_language == language.language_id:
-                    self.logger.warning(
-                        f"That was the 'default_limit_language'. Please create '{sol}' or change 'default_limit_language'."
-                    )
-                    find_default_language = True
-            else:
-                task_languages.append(language)
-
-        if len(task_languages) == 0:
-            self.logger.error(
-                f"No valid languages found in task {task_name}. Please add at least one language."
-            )
-            exit(1)
-
-        if find_default_language:
-            task_config.default_limit_language = task_languages[0].language_id
-            self.logger.warning(
-                f"Changed default_limit_language to {task_config.default_limit_language}"
-            )
-
-        default_limit_language = next(
-            (
-                lang
-                for lang in task_languages
-                if lang.language_id == task_config.default_limit_language
-            ),
-            None,
-        )
-
-        if default_limit_language is not None:
-            for slow_language in removed_languages:
-                if slow_language not in self.slow_language_coefficients:
-                    continue
-                if default_limit_language.relative_time_limit is None:
-                    continue
-
-                coefficient = self.slow_language_coefficients.get(slow_language, 2)
-
-                task_languages.append(
-                    TaskLanguage(
-                        language_id=slow_language,
-                        memory_limit=default_limit_language.memory_limit,
-                        relative_time_limit=default_limit_language.relative_time_limit
-                        * coefficient,
-                        relative_measurement_solution=default_limit_language.relative_measurement_solution,
-                        relative_measurement_task_language=default_limit_language.language_id,
-                    )
-                )
-                self.logger.info(
-                    f"Readded slow language {slow_language} automatically with {coefficient}× relative_time_limit of {default_limit_language.language_id}"
-                )
 
         self.judge_client.set_task_languages(
             self.options.NAMESPACE,
