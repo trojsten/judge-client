@@ -156,7 +156,14 @@ class DeployAction(TasksAction):
     def build_task(
         self, task: Path, config: Task, languages: list[TaskLanguage]
     ) -> bool:
-        for prog in ("checker.cpp", "check.cpp", "checker.cc", "check.cc"):
+        for prog in (
+            "checker.cpp",
+            "check.cpp",
+            "interactiver.cpp",
+            "checker.cc",
+            "check.cc",
+            "interactiver.cc",
+        ):
             if (task / prog).exists():
                 source = (task / prog).absolute()
                 dest = (task / prog).with_suffix(".bin").absolute()
