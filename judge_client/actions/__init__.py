@@ -71,18 +71,20 @@ class TasksAction(Action):
         ]
 
     def should_process_task(self, task: Path) -> bool:
-        if self.options.TRACK_CHANGED_FILES and not any(
-            [(str(task) + os.path.sep).startswith(str(x)) for x in self.changed_paths]
-        ):
-            return False
+        if not self.options.TRACK_CHANGED_FILES:
+            return True
 
-        return True
+        pattern = str(task) + os.path.sep
+
+        return any(
+            pattern.startswith(x) or x.startswith(pattern) for x in self.changed_paths
+        )
 
     def process_task(self, task: Path) -> None:
         raise NotImplementedError
 
     def run(self, *args, **kwargs):
-        self.changed_paths = set[Path]()
+        self.changed_paths = set[str]()
 
         if self.options.TRACK_CHANGED_FILES:
             self.logger.info("Changed files:")
@@ -90,11 +92,11 @@ class TasksAction(Action):
             for file in self.options.CHANGED_FILES:
                 self.logger.info(f" - {file}")
 
-                path = Path("/".join(file.split("/")[:2]))
+                path = Path("/".join(file.split("/")))
                 if path.is_file():
                     path = path.parent
 
-                self.changed_paths.add(path)
+                self.changed_paths.add(str(path) + os.path.sep)
 
             self.logger.info("Extracted changed paths:")
             for path in self.changed_paths:
