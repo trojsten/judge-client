@@ -1,5 +1,5 @@
 """trojsten_judge_client - Client for Trojsten Judge System."""
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 __author__ = "Andrej Lackovič <andrej.lackovic@trojsten.sk>"
 __all__ = []

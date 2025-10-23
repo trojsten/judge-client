@@ -1,6 +1,6 @@
 [project]
 name = "judge-client"
-version = "2.2.2"
+version = "2.2.3"
 description = "Client for Trojsten Judge API"
 readme = "README.md"
 requires-python = ">=3.12"
