@@ -270,7 +270,11 @@ class DeployAction(TasksAction):
 
                 # TODO: maybe use sols from relative measurement if present?
                 for sol in (task / "sols").iterdir():
-                    if sol.is_file() and sol.match("sol.*"):
+                    if (
+                        sol.is_file()
+                        and sol.match("sol.*")
+                        and sol.suffix not in {".bin"}
+                    ):
                         cmdline.append(str(sol.relative_to(task)))
 
                 subprocess.run(
@@ -394,7 +398,11 @@ class DeployAction(TasksAction):
                 self.logger.warning("No solutions to submit")
             else:
                 for sol in submit_dir.iterdir():
-                    if sol.is_file() and sol.match("sol.*"):
+                    if (
+                        sol.is_file()
+                        and sol.match("sol.*")
+                        and sol.suffix not in {".bin"}
+                    ):
                         self.logger.info(f"Submitting solution {sol.name}")
                         self.judge_client.submit(
                             namespace=self.options.NAMESPACE,
