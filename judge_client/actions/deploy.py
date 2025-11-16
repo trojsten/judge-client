@@ -36,8 +36,6 @@ class DeployAction(TasksAction):
     slow_language_coefficients: dict[str, int] = {}
 
     def get_task_name(self, task: Path) -> str:
-        # KSP-school
-        # return str(task.relative_to(self.options.TASK_DIR)).split("/")[1]
         return self.options.TASK_PREFIX + str(
             task.relative_to(self.options.TASK_DIR)
         ).replace("/", "-")
@@ -156,14 +154,22 @@ class DeployAction(TasksAction):
     def build_task(
         self, task: Path, config: Task, languages: list[TaskLanguage]
     ) -> bool:
-        for prog in (
+        to_compile = [
             "checker.cpp",
             "check.cpp",
             "interactiver.cpp",
             "checker.cc",
             "check.cc",
             "interactiver.cc",
-        ):
+        ]
+        if "__action_compile_rglobs" in config.config:
+            for pattern in config.config["__action_compile_rglobs"]:
+                for file in task.rglob(pattern):
+                    rel_path = file.relative_to(task)
+                    if str(rel_path) not in to_compile:
+                        to_compile.append(str(rel_path))
+
+        for prog in to_compile:
             if (task / prog).exists():
                 source = (task / prog).absolute()
                 dest = (task / prog).with_suffix(".bin").absolute()
