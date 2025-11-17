@@ -244,6 +244,10 @@ class DeployAction(TasksAction):
                 self.logger.info(
                     " - Not running solutions to generate outputs as task has custom languages only"
                 )
+            elif "__action_do_not_run_solutions" in config.config:
+                self.logger.info(
+                    " - Not running solutions to generate outputs as per '__action_do_not_run_solutions' flag"
+                )
 
             else:
                 self.logger.info(" - Running solutions to generate outputs")
