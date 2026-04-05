@@ -9,7 +9,7 @@ from shutil import copytree, rmtree
 
 from deepmerge import always_merger
 
-from judge_client.actions import TasksAction
+from judge_client.actions import TaskFailed, TasksAction
 from judge_client.exceptions import NotFoundError
 from judge_client.types import Task, TaskLanguage
 
@@ -109,7 +109,7 @@ class DeployAction(TasksAction):
             self.logger.error(
                 f"No valid languages found in task {task_config.name}. Please add at least one language."
             )
-            exit(1)
+            raise TaskFailed()
 
         if find_default_language:
             task_config.default_limit_language = task_languages[0].language_id
@@ -352,13 +352,13 @@ class DeployAction(TasksAction):
 
         if task_config is None:
             self.logger.error(f"Failed to load task config for {task_name}")
-            exit(1)
+            raise TaskFailed()
 
         task_languages = self.get_languages(task, task_config)
 
         if not self.build_task(task, task_config, task_languages):
             self.logger.error(f"Failed to build task {task_name}")
-            exit(1)
+            raise TaskFailed()
 
         # Get old task
         try:

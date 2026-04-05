@@ -102,6 +102,8 @@ class TasksAction(Action):
             for path in self.changed_paths:
                 self.logger.info(f" - {path}")
 
+        failed = False
+
         for task in self.get_tasks():
             if not self.should_process_task(task):
                 self.logger.info(f"Skipping task {task}")
@@ -111,7 +113,14 @@ class TasksAction(Action):
                 self.process_task(task)
             except Exception:
                 self.logger.exception(f"Failed to process task {task}")
-                exit(1)
+                failed = True
+
+        if failed:
+            self.logger.error("At least one task failed")
+            exit(1)
+
+class TaskFailed(Exception):
+    pass
 
 
 __all__ = ["Action", "TasksAction"]
