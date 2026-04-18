@@ -30,6 +30,7 @@ class DeployAction(TasksAction):
             self.TASK_PREFIX = self._env("JUDGE_TASK_PREFIX", "")
 
             self.SUBMIT_SOLS = self._env("JUDGE_SUBMIT_SOLS", "false").lower() == "true"
+            self.SUBMIT_SOLS_GLOB = self._env("JUDGE_SUBMIT_SOLS_GLOB", "sols/sol.*")
 
     options: Options  # type:ignore
 
@@ -397,24 +398,21 @@ class DeployAction(TasksAction):
 
         if self.options.SUBMIT_SOLS:
             self.logger.info("Uploading submits")
-            submit_dir = task / "sols"
-            if not submit_dir.exists():
+            matched = sorted(task.glob(self.options.SUBMIT_SOLS_GLOB))
+            if not matched:
                 self.logger.warning("No solutions to submit")
             else:
-                for sol in submit_dir.iterdir():
-                    if (
-                        sol.is_file()
-                        and sol.match("sol.*")
-                        and sol.suffix not in {".bin"}
-                    ):
-                        self.logger.info(f"Submitting solution {sol.name}")
-                        self.judge_client.submit(
-                            namespace=self.options.NAMESPACE,
-                            task=task_name,
-                            external_user_id=f"{self.options.TASK_PREFIX}-github-action",
-                            filename=sol.name,
-                            program=sol.read_bytes(),
-                        )
+                for sol in matched:
+                    if not sol.is_file() or sol.suffix in {".bin"}:
+                        continue
+                    self.logger.info(f"Submitting solution {sol.name}")
+                    self.judge_client.submit(
+                        namespace=self.options.NAMESPACE,
+                        task=task_name,
+                        external_user_id=f"{self.options.TASK_PREFIX}-github-action",
+                        filename=sol.name,
+                        program=sol.read_bytes(),
+                    )
 
 
 __all__ = ["DeployAction"]
