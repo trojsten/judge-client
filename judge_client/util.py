@@ -32,6 +32,8 @@ class JudgeClientIterator[T]:
 
         if self.__data_offset >= len(self.__data):
             self.__count, data = self.__fetch_data(self.__offset)
+            if not data:
+                raise StopIteration
             self.__data = data
             self.__data_offset = 0
 
