@@ -339,11 +339,12 @@ class DeployAction(TasksAction):
             tmp.seek(0)
 
             self.logger.info("Uploading data")
-            self.judge_client.upload_task_data(
-                self.options.NAMESPACE,
-                task_name,
-                tmp,
-            )
+            with open(tmp.name, "rb") as f:
+                self.judge_client.upload_task_data(
+                    self.options.NAMESPACE,
+                    task_name,
+                    f,
+                )
 
     def process_task(self, task: Path) -> None:
         task_name = self.get_task_name(task)
