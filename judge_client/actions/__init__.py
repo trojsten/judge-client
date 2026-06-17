@@ -57,10 +57,7 @@ class TasksAction(Action):
             )
 
             if self.TRACK_CHANGED_FILES:
-                self.CHANGED_FILES = [
-                    x.removeprefix("problems/")
-                    for x in self._env("JUDGE_CHANGED_FILES", "").split(" ")
-                ]
+                self.CHANGED_FILES = self._env("JUDGE_CHANGED_FILES", "").split(" ")
 
     options: Options
 
