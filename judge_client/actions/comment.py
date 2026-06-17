@@ -60,9 +60,8 @@ class CommentAction(Action):
                 for filename, submits in grouped_submits.items():
                     f.write(f"  - `{filename}`:\n")
                     for submit in sorted(submits, key=lambda x: x.created_at):
-                        #     - DD. MM. YYYY HH:MM:SS (hash) - [submit](/public/submit/...)
                         f.write(
-                            f"    - [{submit.created_at.strftime('%Y-%m-%d %H:%M')} ({submit.external_user_id.split(':')[-1]})]({submit.public_protocol_url})\n"
+                            f"    - {submit.created_at.strftime('%Y-%m-%d %H:%M')} ({submit.external_user_id.split(':')[-1]}): [{submit.public_id}]({submit.public_protocol_url})\n"
                         )
 
             f.write("\n🔍 You can now test your changes")
