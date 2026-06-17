@@ -1,5 +1,5 @@
 import datetime
-from collections.abc import Iterable
+from collections.abc import Iterator
 from sys import version as python_version
 from typing import IO
 
@@ -31,12 +31,10 @@ class JudgeClient:
         self.judge_url = judge_url
 
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": f"trojsten-judge-client/{judge_client_version} (Python {python_version})",
-                "X-API-Token": self.judge_token,
-            }
-        )
+        self.session.headers.update({
+            "User-Agent": f"trojsten-judge-client/{judge_client_version} (Python {python_version})",
+            "X-API-Token": self.judge_token,
+        })
 
     #
     # Helpers
@@ -199,7 +197,7 @@ class JudgeClient:
         external_user_id: str | None = None,
         offset: int = 0,
         batch_size: int = 25,
-    ) -> Iterable[Submit]:
+    ) -> Iterator[Submit]:
         """
         Get all submit matching specified criteria.
 
@@ -211,7 +209,7 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
 
-        :returns: Iterable of Submits
+        :returns: Iterator of Submits
         """
 
         def fetch_data(offset) -> tuple[int, list[Submit]]:
@@ -295,7 +293,7 @@ class JudgeClient:
         namespace: str | None = None,
         offset: int = 0,
         batch_size: int = 25,
-    ) -> Iterable[TaskShort]:
+    ) -> Iterator[TaskShort]:
         """
         Gets all tasks accessible by the token matching specified criteria.
 
@@ -306,7 +304,7 @@ class JudgeClient:
 
         :raises JudgeConnectionError: If the connection to the judge system fails.
 
-        :returns: Iterable of tasks
+        :returns: Iterator of tasks
         """
 
         def fetch_data(offset) -> tuple[int, list[TaskShort]]:

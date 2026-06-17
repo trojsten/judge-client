@@ -1,7 +1,10 @@
 from collections.abc import Callable
+from typing import Iterator, TypeVar
+
+T = TypeVar("T")
 
 
-class JudgeClientIterator[T]:
+class JudgeClientIterator[T](Iterator[T]):
     """
     An iterator that wraps an API client and handles pagination.
     """
