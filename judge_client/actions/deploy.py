@@ -3,13 +3,15 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+from base64 import urlsafe_b64encode
 from copy import deepcopy
+from hashlib import blake2b
 from pathlib import Path
 from shutil import copytree, rmtree
 
 from deepmerge import always_merger
 
-from judge_client.actions import TaskFailed, TasksAction
+from judge_client.actions import TaskFailedError, TasksAction
 from judge_client.exceptions import NotFoundError
 from judge_client.types import Task, TaskLanguage
 
@@ -32,7 +34,7 @@ class DeployAction(TasksAction):
             self.SUBMIT_SOLS = self._env("JUDGE_SUBMIT_SOLS", "false").lower() == "true"
             self.SUBMIT_SOLS_GLOB = self._env("JUDGE_SUBMIT_SOLS_GLOB", "sols/sol.*")
 
-    options: Options  # type:ignore
+    options: Options
 
     slow_language_coefficients: dict[str, int] = {}
 
@@ -110,7 +112,7 @@ class DeployAction(TasksAction):
             self.logger.error(
                 f"No valid languages found in task {task_config.name}. Please add at least one language."
             )
-            raise TaskFailed()
+            raise TaskFailedError()
 
         if find_default_language:
             task_config.default_limit_language = task_languages[0].language_id
@@ -354,13 +356,13 @@ class DeployAction(TasksAction):
 
         if task_config is None:
             self.logger.error(f"Failed to load task config for {task_name}")
-            raise TaskFailed()
+            raise TaskFailedError()
 
         task_languages = self.get_languages(task, task_config)
 
         if not self.build_task(task, task_config, task_languages):
             self.logger.error(f"Failed to build task {task_name}")
-            raise TaskFailed()
+            raise TaskFailedError()
 
         # Get old task
         try:
@@ -406,13 +408,40 @@ class DeployAction(TasksAction):
                 for sol in matched:
                     if not sol.is_file() or sol.suffix in {".bin"}:
                         continue
-                    self.logger.info(f"Submitting solution {sol.name}")
+
+                    program = sol.read_bytes()
+
+                    file_hash = urlsafe_b64encode(
+                        blake2b(program, digest_size=6).digest()
+                    ).decode()
+                    submit_key = f"{sol.name[: 63 - 1 - 8]}:{file_hash}"
+
+                    exists = (
+                        next(
+                            self.judge_client.get_submits(
+                                namespace=self.options.NAMESPACE,
+                                task=task_name,
+                                external_user_id=submit_key,
+                                batch_size=1,
+                            ),
+                            None,
+                        )
+                        is not None
+                    )
+
+                    if exists:
+                        self.logger.info(
+                            f" - not submitting solution {sol.name}, as it was already submitted ({submit_key})"
+                        )
+                        continue
+
+                    self.logger.info(f" - submitting solution {sol.name}")
                     self.judge_client.submit(
                         namespace=self.options.NAMESPACE,
                         task=task_name,
-                        external_user_id=f"{self.options.TASK_PREFIX}-github-action",
+                        external_user_id=submit_key,
                         filename=sol.name,
-                        program=sol.read_bytes(),
+                        program=program,
                     )
 
 

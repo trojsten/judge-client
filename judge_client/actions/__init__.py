@@ -62,7 +62,7 @@ class TasksAction(Action):
                     for x in self._env("JUDGE_CHANGED_FILES", "").split(" ")
                 ]
 
-    options: Options  # type: ignore
+    options: Options
 
     def get_tasks(self) -> list[Path]:
         return [
@@ -119,8 +119,9 @@ class TasksAction(Action):
             self.logger.error("At least one task failed")
             exit(1)
 
-class TaskFailed(Exception):
+
+class TaskFailedError(Exception):
     pass
 
 
-__all__ = ["Action", "TasksAction"]
+__all__ = ["Action", "TasksAction", "TaskFailedError"]

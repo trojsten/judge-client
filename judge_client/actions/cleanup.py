@@ -10,7 +10,7 @@ class CleanupAction(Action):
 
             self.TASK_PREFIX = self._env("JUDGE_TASK_PREFIX", "")
 
-    options: Options  # type:ignore
+    options: Options
 
     def run(self, *args, **kwargs) -> None:
         for task in list(
