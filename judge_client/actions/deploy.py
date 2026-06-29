@@ -298,11 +298,7 @@ class DeployAction(TasksAction):
 
         elif (
             self.options.TESTCASES_DIR is not None
-            and (
-                src := self.options.TESTCASES_DIR
-                / task.relative_to(self.options.TASK_DIR)
-                / "test"
-            ).exists()
+            and (src := self.options.TESTCASES_DIR / task / "test").exists()
         ):
             self.logger.info(
                 f"Not building task (no generator found), using data from '{self.options.TESTCASES_DIR}'"
