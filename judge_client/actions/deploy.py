@@ -12,7 +12,7 @@ from shutil import copytree, rmtree
 from deepmerge import always_merger
 
 from judge_client.actions import TaskFailedError, TasksAction
-from judge_client.exceptions import NotFoundError
+from judge_client.exceptions import NotFoundError, UnknownLanguageError
 from judge_client.types import Task, TaskLanguage
 
 
@@ -432,13 +432,18 @@ class DeployAction(TasksAction):
                         continue
 
                     self.logger.info(f" - submitting solution {sol.name}")
-                    self.judge_client.submit(
-                        namespace=self.options.NAMESPACE,
-                        task=task_name,
-                        external_user_id=submit_key,
-                        filename=sol.name,
-                        program=program,
-                    )
+                    try:
+                        self.judge_client.submit(
+                            namespace=self.options.NAMESPACE,
+                            task=task_name,
+                            external_user_id=submit_key,
+                            filename=sol.name,
+                            program=program,
+                        )
+                    except UnknownLanguageError:
+                        self.logger.warning(
+                            f"Failed to submit solution {sol.name}, as it does not have known language."
+                        )
 
 
 __all__ = ["DeployAction"]
