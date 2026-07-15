@@ -327,7 +327,7 @@ class DeployAction(TasksAction):
             self.logger.warning(
                 f"Consider decreasing size of task data or uploading it manually to {self.options.API_ORIGIN}"
             )
-            return
+            raise TaskFailedError()
 
         # TODO: maybe use zstd when Python 3.14 is released and ready for use + supported by judge-ui
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp:
