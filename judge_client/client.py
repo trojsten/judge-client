@@ -566,6 +566,7 @@ class JudgeClient:
         for lang in task_languages:
             if lang.language_id not in current_language_ids:
                 self.add_task_language(namespace, task, lang)
+                current_language_ids.add(lang.language_id)
             else:
                 self.update_task_language(namespace, task, lang)
 
