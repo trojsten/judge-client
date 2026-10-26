@@ -16,6 +16,13 @@ from judge_client.exceptions import NotFoundError, UnknownLanguageError
 from judge_client.types import Task, TaskLanguage
 
 
+def _deduplicate_languages(languages: list[dict]) -> list[dict]:
+    by_id: dict[str, dict] = {}
+    for language in languages:
+        by_id[language["language_id"]] = language
+    return list(by_id.values())
+
+
 class DeployAction(TasksAction):
     class Options(TasksAction.Options):
         def __init__(self):
@@ -78,6 +85,9 @@ class DeployAction(TasksAction):
 
         if data is None:
             return None
+
+        if "languages" in data:
+            data["languages"] = _deduplicate_languages(data["languages"])
 
         data["name"] = name
         data["namespace"] = namespace
